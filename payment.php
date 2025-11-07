@@ -9,7 +9,7 @@
 <script src="https://cdn.tailwindcss.com"></script>
 
 <!-- PayPal SDK -->
-<script src="https://www.paypal.com/sdk/js?client-id=AbqKRxC5wgPydys6PPWN2LBwVbIjlpm61gWnwB_VpjBVh3Pc4ZavsLU27SvgkyE9NHWez9xzWzd4qqxi&currency=USD"></script>
+<script src="https://www.paypal.com/sdk/js?client-id=AV7e6OP3djKi3Fth62XHLGr5p1HVV9AZEtAj5jWpCORMLDfMt5xhVEqh026_z-8So-M5x1sF2J8r9Yc9&currency=USD"></script>
 
 <!-- Google Pay JS -->
 <script async src="https://pay.google.com/gp/p/js/pay.js" onload="onGooglePayLoaded()"></script>
