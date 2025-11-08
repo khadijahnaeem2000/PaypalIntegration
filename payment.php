@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Payment | PayPal</title>
 
-<!-- Tailwind CSS CDN -->
+<!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
 
 <!-- PayPal SDK -->
 <script src="https://www.paypal.com/sdk/js?client-id=AV7e6OP3djKi3Fth62XHLGr5p1HVV9AZEtAj5jWpCORMLDfMt5xhVEqh026_z-8So-M5x1sF2J8r9Yc9&currency=USD"></script>
 
-<!-- Google Pay JS -->
+<!-- Google Pay -->
 <script async src="https://pay.google.com/gp/p/js/pay.js" onload="onGooglePayLoaded()"></script>
 
 <style>
@@ -72,16 +72,16 @@ body {
 
 <body>
 <div class="pay-card text-center">
-  <h2 class="text-2xl font-semibold text-gray-800 mb-2">Phone Activation</h2>
-  <p class="text-gray-500 mb-6">Enter your device ID and payment amount</p>
+  <h2 class="text-2xl font-semibold text-gray-800 mb-2">Device license</h2>
+  <p class="text-gray-500 mb-6">Enter your device license and payment amount</p>
 
-  <!-- Device Token Input -->
-  <input type="text" id="device_token" class="input-box" placeholder="Enter your Device ID">
+  <!-- Device Token -->
+  <input type="text" id="device_token" class="input-box" placeholder="Enter your Device license">
 
-  <!-- Amount Input -->
+  <!-- Amount -->
   <input type="number" id="amount" class="input-box" placeholder="Enter amount in USD" min="1" step="0.01">
 
-  <!-- PayPal button -->
+  <!-- PayPal -->
   <div id="paypal-button-container" class="mb-6"></div>
 
   <div class="relative flex items-center justify-center mb-6">
@@ -90,11 +90,13 @@ body {
     <div class="flex-grow border-t border-gray-300"></div>
   </div>
 
-  <!-- Google Pay button -->
-  <!-- <button id="custom-google-pay" class="gpay-custom-btn mb-4">
+  <!-- Google Pay Button -->
+  <!--
+  <button id="custom-google-pay" class="gpay-custom-btn mb-4">
     <img src="googlepay.png" alt="Google Pay logo">
     <span>Pay with Google Pay</span>
-  </button> -->
+  </button>
+  -->
 
   <p class="text-xs text-gray-400 mt-6">
     Payments are processed securely via PayPal & Google Pay
@@ -103,7 +105,7 @@ body {
 
 <script>
 /* --------------------------
- * Utility: get user inputs
+ * Utility: Get user inputs
  * -------------------------- */
 function getInputs() {
   const deviceToken = document.getElementById('device_token').value.trim();
@@ -123,48 +125,50 @@ function getInputs() {
 /* --------------------------
  * PAYPAL PAYMENT
  * -------------------------- */
+let paymentCompleted = false; // 🟢 Prevent double payment
+
 paypal.Buttons({
   style: { layout: 'vertical', color: 'gold', shape: 'pill', label: 'paypal' },
-  createOrder: function(data, actions) {
+
+  createOrder: function (data, actions) {
     const inputs = getInputs();
     if (!inputs) return actions.reject();
-    return actions.order.create({ purchase_units: [{ amount: { value: inputs.amount } }] });
+    return actions.order.create({
+      purchase_units: [{ amount: { value: inputs.amount } }],
+    });
   },
-  // onApprove: function(data, actions) {
-  //   const inputs = getInputs();
-  //   return actions.order.capture().then(function(details) {
-  //     alert('✅ PayPal payment completed by ' + details.payer.name.given_name);
-  //     window.location.href = `success.php?orderID=${data.orderID}&amount=${inputs.amount}&device_token=${encodeURIComponent(inputs.deviceToken)}`;
-  //   });
-  // },
-  onApprove: function(data, actions) {
-  const inputs = getInputs();
-  return actions.order.capture().then(function(details) {
-    const payerName = details.payer.name.given_name + " " + details.payer.name.surname;
-    const payerEmail = details.payer.email_address;
 
-    alert('✅ PayPal payment completed by ' + payerName);
+  onApprove: function (data, actions) {
+    if (paymentCompleted) return; // ⛔ Prevent duplicate approval
+    paymentCompleted = true; // ✅ Mark as completed
 
-    // Redirect and include payer details
-    window.location.href = `success.php?orderID=${data.orderID}&amount=${inputs.amount}&device_token=${encodeURIComponent(inputs.deviceToken)}&payer_name=${encodeURIComponent(payerName)}&payer_email=${encodeURIComponent(payerEmail)}&method=paypal`;
-  });
-},
+    const inputs = getInputs();
+    return actions.order.capture().then(function (details) {
+      const payerName = details.payer.name.given_name + " " + details.payer.name.surname;
+      const payerEmail = details.payer.email_address;
 
-  onError: function(err) {
+      alert("✅ PayPal payment completed by " + payerName);
+
+      // Redirect safely to success page
+      window.location.href = `success.php?orderID=${data.orderID}&amount=${inputs.amount}&device_token=${encodeURIComponent(inputs.deviceToken)}&payer_name=${encodeURIComponent(payerName)}&payer_email=${encodeURIComponent(payerEmail)}&method=paypal`;
+    });
+  },
+
+  onError: function (err) {
     console.error(err);
-    alert('❌ PayPal payment failed.');
+    alert("❌ PayPal payment failed.");
   }
-}).render('#paypal-button-container');
+}).render("#paypal-button-container");
 
 /* --------------------------
- * GOOGLE PAY PAYMENT
+ * GOOGLE PAY (optional)
  * -------------------------- */
 const baseRequest = { apiVersion: 2, apiVersionMinor: 0 };
 const allowedCardNetworks = ["VISA", "MASTERCARD"];
 const allowedCardAuthMethods = ["PAN_ONLY", "CRYPTOGRAM_3DS"];
 const tokenizationSpecification = {
   type: 'PAYMENT_GATEWAY',
-  parameters: { 'gateway': 'example', 'gatewayMerchantId': 'exampleMerchantId' }
+  parameters: { gateway: 'example', gatewayMerchantId: 'exampleMerchantId' }
 };
 const baseCardPaymentMethod = {
   type: 'CARD',
@@ -172,6 +176,7 @@ const baseCardPaymentMethod = {
 };
 const cardPaymentMethod = Object.assign({ tokenizationSpecification }, baseCardPaymentMethod);
 let paymentsClient = null;
+
 function getGooglePaymentsClient() {
   if (!paymentsClient) paymentsClient = new google.payments.api.PaymentsClient({ environment: 'TEST' });
   return paymentsClient;
@@ -191,22 +196,25 @@ function onGooglePayLoaded() {
     }).catch(err => console.error('Error loading Google Pay:', err));
 }
 
-document.getElementById('custom-google-pay').addEventListener('click', function() {
-  const inputs = getInputs();
-  if (!inputs) return;
-  const request = getPaymentDataRequest(inputs.amount);
-  const client = getGooglePaymentsClient();
-  client.loadPaymentData(request)
-    .then(paymentData => {
-      console.log("Payment data:", paymentData);
-      alert('✅ Google Pay Payment Successful!');
-      window.location.href = `success.php?method=googlepay&amount=${inputs.amount}&device_token=${encodeURIComponent(inputs.deviceToken)}`;
-    })
-    .catch(err => {
-      console.error('Google Pay failed:', err);
-      alert('⚠️ Google Pay canceled or failed.');
-    });
-});
+const gpayBtn = document.getElementById('custom-google-pay');
+if (gpayBtn) {
+  gpayBtn.addEventListener('click', function () {
+    const inputs = getInputs();
+    if (!inputs) return;
+    const request = getPaymentDataRequest(inputs.amount);
+    const client = getGooglePaymentsClient();
+    client.loadPaymentData(request)
+      .then(paymentData => {
+        console.log("Payment data:", paymentData);
+        alert('✅ Google Pay Payment Successful!');
+        window.location.href = `success.php?method=googlepay&amount=${inputs.amount}&device_token=${encodeURIComponent(inputs.deviceToken)}`;
+      })
+      .catch(err => {
+        console.error('Google Pay failed:', err);
+        alert('⚠️ Google Pay canceled or failed.');
+      });
+  });
+}
 </script>
 </body>
 </html>
